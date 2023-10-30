@@ -118,6 +118,10 @@ func (i *instances) Deploy() {
 	i.displayOutput()
 }
 
+func (i *instances) GetInstances() []awsec2.Instance {
+	return i.ec2s
+}
+
 func (i *instances) SetInstanceName(name string) {
 	i.opts.InstanceNamePrefix = name
 }
@@ -126,8 +130,17 @@ func (i *instances) SetInstancesSpec(spec []InstanceSpec) {
 	i.opts.InstanceSpec = spec
 }
 
-func (i *instances) GetInstances() []awsec2.Instance {
-	return i.ec2s
+func (i *InstanceSpec) Clone(num int) []InstanceSpec {
+	var (
+		clones         = make([]InstanceSpec, 0)
+		numberOfClones = make([]struct{}, num)
+	)
+
+	for range numberOfClones {
+		clones = append(clones, *i)
+	}
+
+	return clones
 }
 
 func (i *instances) importSSHKey(keyName string, publicKey *string) {
@@ -210,17 +223,14 @@ func (i *instances) displayOutput() {
 			&awscdk.CfnOutputProps{
 				Value:       ec2.InstancePublicIp(),
 				Description: jsii.String("instance public ip address"),
-				ExportName:  jsii.String(fmt.Sprintf("%s-%d-pub", i.opts.InstanceNamePrefix, ind)),
+				ExportName:  jsii.String(fmt.Sprintf("PublicIP%d", ind)),
 			})
-	}
-
-	for ind, ec2 := range i.ec2s {
 		awscdk.NewCfnOutput(i.stack,
 			jsii.String(fmt.Sprintf("%s-%d-private-ip", i.opts.InstanceNamePrefix, ind)),
 			&awscdk.CfnOutputProps{
 				Value:       ec2.InstancePrivateIp(),
 				Description: jsii.String("instance private ip address"),
-				ExportName:  jsii.String(fmt.Sprintf("%s-%d-priv", i.opts.InstanceNamePrefix, ind)),
+				ExportName:  jsii.String(fmt.Sprintf("PrivateIP%d", ind)),
 			})
 	}
 }
