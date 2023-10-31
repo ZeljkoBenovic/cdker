@@ -132,8 +132,6 @@ func (i *instances) getSecurityGroup(vpc awsec2.IVpc) awsec2.SecurityGroup {
 		Vpc:                  vpc,
 		AllowAllIpv6Outbound: jsii.Bool(true),
 		AllowAllOutbound:     jsii.Bool(true),
-		Description:          jsii.String(fmt.Sprintf("%s-secgroup", i.opts.InstanceNamePrefix)),
-		SecurityGroupName:    jsii.String(fmt.Sprintf("%s-secgroup", i.opts.InstanceNamePrefix)),
 	})
 
 	for _, spec := range i.opts.InstanceSpec {
