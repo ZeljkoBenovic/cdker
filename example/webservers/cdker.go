@@ -1,35 +1,3 @@
-# CDKER (ci-di-key-er)
-`cdker` - simplifies resources deployment on AWS with GO and AWS CDK.
-
-## Prerequisites
-* [NPM](https://nodejs.org/en) (NodeJS)
-* AWS Cloud Development Kit ([CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html)) `npm install -g aws-cdk`
-* [GO](https://go.dev/doc/install) 
-
-
-## Usage
-
-* [Install](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) AWS CDK
-* [Bootstrap](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) AWS account
-* Create empty directory
-* Initialize CDK application `cdk init app --language go`
-* Edit `.go` file to use `cdker` framework
-* `go mod tidy`
-* `cdk deploy`
-
-## Quickstart
-Deploy ec2 instance from the example folder:
-
-* [Install](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) AWS CDK
-* [Bootstrap](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html) AWS account
-* Create empty directory and copy all files from [example/webservers](example/webservers) to it
-* Edit the `credentials` and `imported ssh key name`
-* `go mod tidy`
-* `cdk deploy`
-
-## Examples
-### Two ec2 instances
-```go
 package main
 
 import (
@@ -38,7 +6,7 @@ import (
 )
 
 func main() {
-	app := stack.New().SetStack("xxxxxxxxxx", stack.WithCredentials("xxxxxxxxxxx", "xxxxxxxxxx"))
+	app := stack.New().SetStack("example-stack", stack.WithCredentials("368322230844", "eu-west-1"))
 	app.DeployResources(deploy2WebServers(app))
 }
 
@@ -84,9 +52,8 @@ func deploy2WebServers(app stack.Stack) stack.DeployStack {
 		o.InstanceNamePrefix = "example"
 		o.SSHKeySpecs = &instance.SSHKeySpecs{
 			// ssh key is already imported, we just reference its name
-			Name: "ssh-key-name",
+			Name: "devops-zex",
 		}
 		o.InstanceSpec = webServers
 	})
 }
-```
