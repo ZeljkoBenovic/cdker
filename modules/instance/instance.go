@@ -267,9 +267,6 @@ func (i *instances) deployEC2instances() {
 			UserDataCausesReplacement:       &spec.UserDataCausesReplacement,
 		})
 
-		// TODO: attach volumes
-		//i.attachVolume(spec, ec2.InstanceId())
-
 		i.ec2s = append(i.ec2s, ec2)
 	}
 }

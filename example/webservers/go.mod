@@ -2,7 +2,7 @@ module example
 
 go 1.20
 
-require github.com/ZeljkoBenovic/cdker v0.0.0-20231031082811-2e746b630732
+require github.com/ZeljkoBenovic/cdker v0.0.0-20231031113540-195bb8e27c0f
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect

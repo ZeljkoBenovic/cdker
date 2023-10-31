@@ -43,6 +43,17 @@ func deploy2WebServers(app stack.Stack) stack.DeployStack {
 				AllowFromSelf: false,
 			},
 		},
+		// mount EBS volume on boot
+		BashUserData: []string{
+			"mkdir /home/ubuntu/data",
+			"yes | mkfs.ext4 /dev/nvme1n1",
+			"mount /dev/nvme1n1 /home/ubuntu/data",
+			"uuid=$(sudo blkid /dev/nvme1n1 | sed -n 's/.*UUID=\\\"\\([^\\\"]*\\)\\\".*/\\1/p')",
+			"bash -c \"echo 'UUID=${uuid}     /home/ubuntu/data       ext4   defaults' >> /etc/fstab\"",
+			"sudo chown -R ubuntu. /home/ubuntu/data",
+		},
+		// replace VM if user data changes
+		UserDataCausesReplacement: true,
 	}
 
 	// clone instance x number of times
