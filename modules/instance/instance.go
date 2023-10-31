@@ -30,11 +30,12 @@ func New(stack constructs.Construct, opts ...func(*Options)) Instances {
 		InstanceNamePrefix: "ec2-instance",
 		InstanceSpec: []InstanceSpec{
 			{
-				Class:          InstanceClass_T3,
-				Size:           InstanceSize_SMALL,
-				SubnetType:     SubnetType_PUBLIC,
-				AMI:            Ubuntu20,
-				VPC:            VPCDefault,
+				Class:      InstanceClass_T3,
+				Size:       InstanceSize_SMALL,
+				SubnetType: SubnetType_PUBLIC,
+				AMI:        Ubuntu20,
+				// default vpc
+				VPC:            nil,
 				AssociatePubIP: false,
 				StorageSpecs: []StorageSpec{
 					{
@@ -51,6 +52,17 @@ func New(stack constructs.Construct, opts ...func(*Options)) Instances {
 						AllowFromSelf: true,
 					},
 				},
+				// mount EBS volume on boot
+				BashUserData: []string{
+					"mkdir /home/ubuntu/data",
+					"yes | mkfs.ext4 /dev/nvme1n1",
+					"mount /dev/nvme1n1 /home/ubuntu/data",
+					"uuid=$(sudo blkid /dev/nvme1n1 | sed -n 's/.*UUID=\\\"\\([^\\\"]*\\)\\\".*/\\1/p')",
+					"bash -c \"echo 'UUID=${uuid}     /home/ubuntu/data       ext4   defaults' >> /etc/fstab\"",
+					"sudo chown -R ubuntu. /home/ubuntu/data",
+				},
+				// replace VM if user data changes
+				UserDataCausesReplacement: true,
 			},
 		},
 	}
@@ -137,16 +149,23 @@ func (i *instances) getSecurityGroup(vpc awsec2.IVpc) awsec2.SecurityGroup {
 	return i.secGroup
 }
 
-func (i *instances) getVPC(vpc VPCType) awsec2.IVpc {
+func (i *instances) getVPC(vpc *VPCSpec) awsec2.IVpc {
 	if i.vpc != nil {
 		return i.vpc
 	}
 
 	// when no VPC specified, deploy on default
 	switch vpc {
-	default:
+	case nil:
 		i.vpc = awsec2.Vpc_FromLookup(i.stack, jsii.String(i.opts.InstanceNamePrefix+"-vpc"), &awsec2.VpcLookupOptions{
 			IsDefault: jsii.Bool(true),
+		})
+	default:
+		i.vpc = awsec2.Vpc_FromLookup(i.stack, jsii.String(i.opts.InstanceNamePrefix+"-vpc"), &awsec2.VpcLookupOptions{
+			IsDefault: &vpc.IsDefault,
+			Region:    &vpc.Region,
+			VpcId:     &vpc.ID,
+			VpcName:   &vpc.Name,
 		})
 	}
 

@@ -13,7 +13,7 @@ type InstanceSpec struct {
 	Size                      InstanceSize
 	SubnetType                SubnetType
 	AMI                       AMIType
-	VPC                       VPCType
+	VPC                       *VPCSpec
 	AssociatePubIP            bool
 	StorageSpecs              []StorageSpec
 	SecurityGroupSpecs        []SecurityGroupSpec
@@ -41,8 +41,14 @@ type SSHKeySpecs struct {
 	PublicKey *string
 }
 
+type VPCSpec struct {
+	ID        string
+	Name      string
+	Region    string
+	IsDefault bool
+}
+
 type AMIType int
-type VPCType int
 
 type InstanceClass string
 type InstanceSize string
@@ -57,7 +63,6 @@ type SecurityGroupPort interface {
 }
 
 const Ubuntu20 AMIType = iota + 1
-const VPCDefault VPCType = iota + 1
 
 const (
 	InstanceClass_T3 = InstanceClass(awsec2.InstanceClass_T3)

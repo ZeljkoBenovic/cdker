@@ -18,7 +18,7 @@ func deploy2WebServers(app stack.Stack) stack.DeployStack {
 		SubnetType: instance.SubnetType_PUBLIC,
 		// Default instance is Ubuntu20.04 and default VPC
 		//AMI:                instance.Ubuntu20,
-		//VPC:                instance.VPCDefault,
+		//VPC:                nil,
 		AssociatePubIP: true,
 		StorageSpecs: []instance.StorageSpec{
 			{
