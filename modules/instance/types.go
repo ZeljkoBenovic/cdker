@@ -9,14 +9,16 @@ type Options struct {
 }
 
 type InstanceSpec struct {
-	Class              InstanceClass
-	Size               InstanceSize
-	SubnetType         SubnetType
-	AMI                AMIType
-	VPC                VPCType
-	AssociatePubIP     bool
-	StorageSpecs       []StorageSpec
-	SecurityGroupSpecs []SecurityGroupSpec
+	Class                     InstanceClass
+	Size                      InstanceSize
+	SubnetType                SubnetType
+	AMI                       AMIType
+	VPC                       VPCType
+	AssociatePubIP            bool
+	StorageSpecs              []StorageSpec
+	SecurityGroupSpecs        []SecurityGroupSpec
+	BashUserData              []string
+	UserDataCausesReplacement bool
 }
 
 type StorageSpec struct {

@@ -226,6 +226,27 @@ func (i *instances) getBlockStorage(spec InstanceSpec) *[]*awsec2.BlockDevice {
 	return &blockStore
 }
 
+func (i *instances) getUserData(spec InstanceSpec) awsec2.UserData {
+	if spec.BashUserData == nil || len(spec.BashUserData) == 0 || spec.BashUserData[0] == "" {
+		return nil
+	}
+
+	mud := awsec2.NewMultipartUserData(&awsec2.MultipartUserDataOptions{})
+
+	mud.AddUserDataPart(
+		// default #!/bin/bash
+		awsec2.MultipartUserData_ForLinux(&awsec2.LinuxUserDataOptions{}),
+		awsec2.MultipartBody_SHELL_SCRIPT(),
+		jsii.Bool(true),
+	)
+
+	for _, cmd := range spec.BashUserData {
+		mud.AddCommands(&cmd)
+	}
+
+	return mud
+}
+
 func (i *instances) deployEC2instances() {
 
 	//TODO: add cloud init support
@@ -242,6 +263,8 @@ func (i *instances) deployEC2instances() {
 			SsmSessionPermissions:           jsii.Bool(true),
 			VpcSubnets:                      &awsec2.SubnetSelection{SubnetType: awsec2.SubnetType(spec.SubnetType)},
 			BlockDevices:                    i.getBlockStorage(spec),
+			UserData:                        i.getUserData(spec),
+			UserDataCausesReplacement:       &spec.UserDataCausesReplacement,
 		})
 
 		// TODO: attach volumes
