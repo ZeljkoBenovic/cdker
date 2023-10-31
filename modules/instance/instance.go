@@ -15,49 +15,6 @@ type Instances interface {
 	Deploy()
 }
 
-type Options struct {
-	InstanceNamePrefix string
-	SSHKeySpecs        *SSHKeySpecs
-	InstanceSpec       []InstanceSpec
-}
-
-type InstanceSpec struct {
-	Class              awsec2.InstanceClass
-	Size               awsec2.InstanceSize
-	SubnetType         awsec2.SubnetType
-	AMI                AMIType
-	VPC                VPCType
-	AssociatePubIP     bool
-	StorageSpecs       []StorageSpec
-	SecurityGroupSpecs []SecurityGroupSpec
-}
-
-type StorageSpec struct {
-	Size                float64
-	Name                string
-	DeleteOnTermination bool
-	VolumeType          awsec2.EbsDeviceVolumeType
-	Encrypted           bool
-}
-
-type SecurityGroupSpec struct {
-	Name          string
-	PeerSpec      awsec2.IPeer
-	PortSpec      awsec2.Port
-	AllowFromSelf bool
-}
-
-type SSHKeySpecs struct {
-	Name      string
-	PublicKey *string
-}
-
-type AMIType int
-type VPCType int
-
-const Ubuntu20 AMIType = iota
-const VPCDefault VPCType = iota
-
 type instances struct {
 	stack    constructs.Construct
 	ec2s     []awsec2.Instance
@@ -73,9 +30,9 @@ func New(stack constructs.Construct, opts ...func(*Options)) Instances {
 		InstanceNamePrefix: "ec2-instance",
 		InstanceSpec: []InstanceSpec{
 			{
-				Class:          awsec2.InstanceClass_T3,
-				Size:           awsec2.InstanceSize_SMALL,
-				SubnetType:     awsec2.SubnetType_PUBLIC,
+				Class:          InstanceClass_T3,
+				Size:           InstanceSize_SMALL,
+				SubnetType:     SubnetType_PUBLIC,
 				AMI:            Ubuntu20,
 				VPC:            VPCDefault,
 				AssociatePubIP: false,
@@ -89,8 +46,8 @@ func New(stack constructs.Construct, opts ...func(*Options)) Instances {
 				SecurityGroupSpecs: []SecurityGroupSpec{
 					{
 						Name:          "ec2-instance-secrutity-group",
-						PeerSpec:      awsec2.Peer_AnyIpv4(),
-						PortSpec:      awsec2.Port_Tcp(jsii.Number[float64](22)),
+						PeerSpec:      PeerAnyIpv4(),
+						PortSpec:      PortTcp(22),
 						AllowFromSelf: true,
 					},
 				},
@@ -185,9 +142,9 @@ func (i *instances) getVPC(vpc VPCType) awsec2.IVpc {
 		return i.vpc
 	}
 
+	// when no VPC specified, deploy on default
 	switch vpc {
-	//TODO: remove enum, check if nil instead
-	case VPCDefault:
+	default:
 		i.vpc = awsec2.Vpc_FromLookup(i.stack, jsii.String(i.opts.InstanceNamePrefix+"-vpc"), &awsec2.VpcLookupOptions{
 			IsDefault: jsii.Bool(true),
 		})
@@ -197,9 +154,9 @@ func (i *instances) getVPC(vpc VPCType) awsec2.IVpc {
 }
 
 func (i *instances) getAMI(ami AMIType) awsec2.IMachineImage {
-	//TODO: remove enum, check if nil instead
+	// when no AMI specified return Ubuntu20.04 as default
 	switch ami {
-	case Ubuntu20:
+	default:
 		return awsec2.MachineImage_Lookup(&awsec2.LookupMachineImageProps{
 			Name: jsii.String("ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"),
 			Owners: &[]*string{
@@ -211,8 +168,6 @@ func (i *instances) getAMI(ami AMIType) awsec2.IMachineImage {
 				},
 			},
 		})
-	default:
-		return nil
 	}
 }
 
@@ -262,7 +217,7 @@ func (i *instances) getBlockStorage(spec InstanceSpec) *[]*awsec2.BlockDevice {
 			DeviceName: jsii.String(ss.Name),
 			Volume: awsec2.BlockDeviceVolume_Ebs(jsii.Number[float64](ss.Size), &awsec2.EbsDeviceOptions{
 				DeleteOnTermination: jsii.Bool(ss.DeleteOnTermination),
-				VolumeType:          ss.VolumeType,
+				VolumeType:          awsec2.EbsDeviceVolumeType(ss.VolumeType),
 				Encrypted:           jsii.Bool(ss.Encrypted),
 			}),
 		})
@@ -276,7 +231,7 @@ func (i *instances) deployEC2instances() {
 	//TODO: add cloud init support
 	for ind, spec := range i.opts.InstanceSpec {
 		ec2 := awsec2.NewInstance(i.stack, jsii.String(fmt.Sprintf("%s-%d", i.opts.InstanceNamePrefix, ind)), &awsec2.InstanceProps{
-			InstanceType:                    awsec2.InstanceType_Of(spec.Class, spec.Size),
+			InstanceType:                    awsec2.InstanceType_Of(awsec2.InstanceClass(spec.Class), awsec2.InstanceSize(spec.Size)),
 			MachineImage:                    i.getAMI(spec.AMI),
 			Vpc:                             i.getVPC(spec.VPC),
 			AssociatePublicIpAddress:        &spec.AssociatePubIP,
@@ -285,7 +240,7 @@ func (i *instances) deployEC2instances() {
 			PropagateTagsToVolumeOnCreation: jsii.Bool(true),
 			SecurityGroup:                   i.getSecurityGroup(i.getVPC(spec.VPC)),
 			SsmSessionPermissions:           jsii.Bool(true),
-			VpcSubnets:                      &awsec2.SubnetSelection{SubnetType: spec.SubnetType},
+			VpcSubnets:                      &awsec2.SubnetSelection{SubnetType: awsec2.SubnetType(spec.SubnetType)},
 			BlockDevices:                    i.getBlockStorage(spec),
 		})
 
